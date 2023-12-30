@@ -1,17 +1,16 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import "./users.css";
-
-import { Tabs } from "antd";
-import qs from "qs";
+import { QuestionCircleOutlined } from "@ant-design/icons";
+import { Popconfirm, Tabs } from "antd";
 import { Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
-
-interface DataType {
-  name: string;
-  gender: string;
-  email: string;
-}
+import UserService from "../../services/users.service";
+import { IUser } from "../../types/interface";
+import { useDispatch, useSelector } from "react-redux";
+import { update } from "../../store/reducers/update";
+import PopUpAddAdmin from "../popUpAddAdmin/popUpAddAdmin";
+import { notifySuccess } from "../../common/toastify";
 
 interface TableParams {
   pagination?: TablePaginationConfig;
@@ -20,94 +19,117 @@ interface TableParams {
   filters?: Record<string, FilterValue>;
 }
 
-const columns: ColumnsType<DataType> = [
-  {
-    title: "Name",
-    dataIndex: "name",
-    sorter: true,
-    render: (name) => `${name.first} ${name.last}`,
-    width: "20%",
-  },
-  {
-    title: "Gender",
-    dataIndex: "gender",
-    width: "20%",
-  },
-  {
-    title: "Email",
-    dataIndex: "email",
-  },
-  {
-    title: "Phone",
-    dataIndex: "phone",
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-  },
-  {
-    title: "Action",
-    dataIndex: "id",
-    render: () => (
-      <div>
-        <button className="btnActionUsers">Block</button>
-        <button className="btnActionUsers">Unblock</button>
-      </div>
-    )
-  },
-];
-
-const getRandomuserParams = (params: TableParams) => ({
-  results: params.pagination?.pageSize,
-  page: params.pagination?.current,
-  ...params,
-});
-
 const Users = (): JSX.Element => {
-  const onChange = (key: string) => {
-    console.log(key);
-  };
-
-  const [data, setData] = useState<DataType[]>();
-  const [loading, setLoading] = useState(false);
+  const [popUpAdd, setPopUpAdd] = useState<boolean>(false);
+  const [admin, setAdmin] = useState<IUser>();
+  const [admins, setAdmins] = useState<IUser[]>([]);
+  const [data, setData] = useState<IUser[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [searchValue, setSearchValue] = useState<string>("");
   const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
       current: 1,
       pageSize: 10,
     },
   });
+  const updateStatus = useSelector((state: any) => state.update);
+  const dispatch = useDispatch();
+  const idAdmin = localStorage.getItem("idAdmin");
+  const userService = new UserService();
+  // const getRandomuserParams = (params: TableParams) => ({
+  //   results: params.pagination?.pageSize,
+  //   page: params.pagination?.current,
+  //   ...params,
+  // });
+  const columns: ColumnsType<IUser> = [
+    {
+      title: "Name",
+      dataIndex: "fullName",
+      width: "25%",
+    },
 
-  const fetchData = () => {
+    {
+      title: "Email",
+      dataIndex: "email",
+    },
+    {
+      title: "Phone",
+      dataIndex: "phone",
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      render: (dataIndex: any) => (
+        <span>{dataIndex === true ? "Active" : "Block"}</span>
+      ),
+      sorter: (a: any, b: any) => Number(a.status) - Number(b.status),
+    },
+
+    {
+      title: "Action",
+      dataIndex: "id",
+      render: (dataIndex: any, record: any) => {
+        return (
+          <div>
+            {record.status === true ? (
+              <button
+                onClick={() => onBlock(dataIndex)}
+                className="btnActionUsers"
+              >
+                Block
+              </button>
+            ) : (
+              <button
+                onClick={() => onActive(dataIndex)}
+                className="btnActionUsers"
+              >
+                Unblock
+              </button>
+            )}
+          </div>
+        );
+      },
+      width: "20%",
+    },
+  ];
+
+  const onActive = async (id: number) => {
+    await userService.active(id);
+    dispatch(update());
+  };
+  const onBlock = async (id: number) => {
+    await userService.block(id);
+    dispatch(update());
+  };
+  const onChange = (key: string) => {
+    // console.log(key);
+  };
+
+  const fetchData = async () => {
     setLoading(true);
-    fetch(
-      `https://randomuser.me/api?${qs.stringify(
-        getRandomuserParams(tableParams)
-      )}`
-    )
-      .then((res) => res.json())
-      .then(({ results }) => {
-        setData(results);
-        setLoading(false);
-        setTableParams({
-          ...tableParams,
-          pagination: {
-            ...tableParams.pagination,
-            total: 200,
-            // 200 is mock data, you should read it from server
-            // total: data.totalCount,
-          },
-        });
-      });
+    const data: any = await userService.getAllUsers();
+
+    setData(data);
+    setLoading(false);
+    setTableParams({
+      ...tableParams,
+      pagination: {
+        ...tableParams.pagination,
+        total: data.length,
+        // 200 is mock data, you should read it from server
+        // total: data.totalCount,
+      },
+    });
   };
 
   useEffect(() => {
     fetchData();
-  }, [JSON.stringify(tableParams)]);
+  }, [JSON.stringify(tableParams), updateStatus]);
 
-  const handleTableChange:any = (
+  const handleTableChange: any = (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue>,
-    sorter: SorterResult<DataType>
+    sorter: SorterResult<IUser>
   ) => {
     setTableParams({
       pagination,
@@ -120,10 +142,45 @@ const Users = (): JSX.Element => {
       setData([]);
     }
   };
+  useEffect(() => {
+    const getAdmin = async () => {
+      const admins = await userService.getAllAdmin();
+      const admin = await userService.getAdminById(Number(idAdmin));
+      setAdmin(admin);
+      setAdmins(admins);
+    };
+    getAdmin();
+  }, [updateStatus]);
+  const handleAddAdmin = () => {
+    setPopUpAdd(true);
+  };
+  const offPopUpAdd = () => {
+    setPopUpAdd(false);
+  };
+  const handleDeleteAdmin = async (id: number) => {
+    await userService.deleteAdmin(id);
+    notifySuccess("Delete Success");
+    dispatch(update());
+  };
+  const handleSearchUsers = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value.length > 0) {
+      setSearchValue(e.target.value);
+    } else {
+      setSearchValue("");
+    }
+  };
+  useEffect(() => {
+    const getData = async () => {
+      const data = await userService.searchUsers(searchValue)
+      setData(data);
+    }
+    getData()
+  },[searchValue]);
 
   return (
     <section className="usersAdmins">
-      <Tabs className="users"
+      <Tabs
+        className="users"
         onChange={onChange}
         type="card"
         items={new Array(2).fill(null).map((_, i) => {
@@ -135,7 +192,13 @@ const Users = (): JSX.Element => {
               children: (
                 <section className="usersGroup">
                   <div className="searchUsers">
-                    <input autoFocus placeholder="Search by Name..." type="text" />
+                    <input
+                      onChange={handleSearchUsers}
+                      value={searchValue}
+                      autoFocus
+                      placeholder="Search by Name..."
+                      type="text"
+                    />
                   </div>
                   <Table
                     columns={columns}
@@ -155,33 +218,55 @@ const Users = (): JSX.Element => {
                 <section className="admins">
                   <table>
                     <thead>
-                      <th>#</th>
                       <th>Name</th>
                       <th>Email</th>
-                      <th>Gender</th>
                       <th>Position</th>
                       <th>Action</th>
                     </thead>
                     <tbody>
-                      <tr>
-                        <td>1</td>
-                        <td>Lam Nhat Tien</td>
-                        <td>nhattienla98@gmail.com</td>
-                        <td>Male</td>
-                        <td>President</td>
-                        <td className="adminsActions">
-                          <button>Edit</button>
-                          <button>Delete</button>
-                        </td>
-                      </tr>
+                      {admins.length > 0 &&
+                        admins.map((item: IUser) => {
+                          return (
+                            <tr key={item.id}>
+                              <td>{item.fullName}</td>
+                              <td>{item.email}</td>
+                              <td>{item.role === 3 ? "Admin" : "Moderator"}</td>
+                              <td className="adminsActions">
+                                {admin?.role === 3 ? (
+                                  <div className="actionUsers">
+                                    <Popconfirm
+                                      title="Delete the task"
+                                      description="Are you sure to delete this task?"
+                                      onConfirm={() =>
+                                        handleDeleteAdmin(Number(item.id))
+                                      }
+                                      okText="Yes"
+                                      cancelText="No"
+                                    >
+                                      <button>Delete</button>
+                                    </Popconfirm>
+                                  </div>
+                                ) : (
+                                  "No have access"
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
                     </tbody>
                   </table>
+                  {admin?.role === 3 ? (
+                    <button onClick={handleAddAdmin} className="btnActionUsers">
+                      Add+ Admin
+                    </button>
+                  ) : null}
                 </section>
               ),
             };
           }
         })}
       />
+      {popUpAdd ? <PopUpAddAdmin offPopUpAdd={offPopUpAdd} /> : null}
     </section>
   );
 };

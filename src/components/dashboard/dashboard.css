@@ -8,14 +8,16 @@
 }
 .dashboard .dashboardGrid {
   width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: repeat(4, auto);
-  grid-template-rows: 200px auto;
-  gap: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
   padding: 20px;
 }
-
+.dashboard .dashboardGrid .dashboardItems {
+  width: 24%;
+  height: 200px;
+}
 
 .dashboard .dashboardGrid .dashboardUsers {
   box-shadow: 0 0 20px 0px rgba(0, 0, 0, 0.35);
@@ -231,5 +233,5 @@
 }
 
 .dashboardChart {
-    grid-area: 2/1/3/4;
+  padding: 20px;
 }

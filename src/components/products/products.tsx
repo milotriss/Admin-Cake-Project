@@ -4,12 +4,11 @@ import qs from "qs";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
 import "./products.css";
+import ProductService from "../../services/products.service";
+import { formatPrice } from "../../common/formatPrice";
+import { IProduct } from "../../types/interface";
 
-interface DataType {
-  name: string;
-  gender: string;
-  email: string;
-}
+
 
 interface TableParams {
   pagination?: TablePaginationConfig;
@@ -18,58 +17,62 @@ interface TableParams {
   filters?: Record<string, FilterValue>;
 }
 
-const columns: ColumnsType<DataType> = [
-  {
-    title: "Image",
-    dataIndex: "image",
-    width: "10%",
-  },
-  {
-    title: "Name",
-    dataIndex: "name",
-    sorter: true,
-    render: (name) => `${name.first} ${name.last}`,
-    width: "20%",
-  },
-  {
-    title: "Price",
-    dataIndex: "price",
-    width: "15%",
-    sorter: true,
-  },
-  {
-    title: "Rating",
-    dataIndex: "rate",
-    width: "10%",
-    sorter: true,
-  },
-  {
-    title: "Stock",
-    dataIndex: "stock",
-    width: "10%",
-  },
-  {
-    title: "Action",
-    dataIndex: "id",
-    render: (id) => (
-      <div>
-        <button className="btnActionUsers">Edit</button>
-        <button className="btnActionUsers">Delete</button>
-        <button className="btnActionUsers">Return</button>
-      </div>
-    ),
-    width: "20%",
-  },
-];
-
-const getRandomuserParams = (params: TableParams) => ({
-  results: params.pagination?.pageSize,
-  page: params.pagination?.current,
-  ...params,
-});
-
 const Products = (): JSX.Element => {
-  const [data, setData] = useState<DataType[]>();
+  const columns: ColumnsType<IProduct> = [
+    {
+      title: "Image",
+      dataIndex: "image",
+      render: (dataIndex) => (
+        <img style={{height:'100%',width:"100%", objectFit:'cover'}} src={dataIndex} alt=""/>
+      ),
+      width: "10%",
+    },
+    {
+      title: "Name",
+      dataIndex: "name",
+      width: "20%",
+    },
+    {
+      title: "Price",
+      dataIndex: "price",
+      render: (dataIndex) => (<span>{formatPrice(dataIndex)}</span>),
+      width: "15%",
+      sorter: (a:any, b:any) =>(Number(a.price) - Number(b.price))
+    },
+    {
+      title: "Rating",
+      dataIndex: "rate",
+      width: "10%",
+      sorter: true,
+    },
+    {
+      title: "Stock",
+      dataIndex: "stock",
+      width: "10%",
+      sorter: (a:any, b:any) =>(Number(a.stock) - Number(b.stock))
+
+    },
+    {
+      title: "Action",
+      dataIndex: "id",
+      render: (id) => (
+        <div>
+          <button className="btnActionUsers">Edit</button>
+          <button className="btnActionUsers">Delete</button>
+          <button className="btnActionUsers">Return</button>
+        </div>
+      ),
+      width: "20%",
+    },
+  ];
+
+  const getRandomuserParams = (params: TableParams) => ({
+    results: params.pagination?.pageSize,
+    page: params.pagination?.current,
+    ...params,
+  });
+  const productService = new ProductService();
+  const [data, setData] = useState<IProduct[]>([]);
   const [loading, setLoading] = useState(false);
   const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
@@ -78,27 +81,21 @@ const Products = (): JSX.Element => {
     },
   });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    fetch(
-      `https://randomuser.me/api?${qs.stringify(
-        getRandomuserParams(tableParams)
-      )}`
-    )
-      .then((res) => res.json())
-      .then(({ results }) => {
-        setData(results);
-        setLoading(false);
-        setTableParams({
-          ...tableParams,
-          pagination: {
-            ...tableParams.pagination,
-            total: 200,
-            // 200 is mock data, you should read it from server
-            // total: data.totalCount,
-          },
-        });
-      });
+    const data:any = await productService.getAllProducts();
+
+    setData(data);
+    setLoading(false);
+    setTableParams({
+      ...tableParams,
+      pagination: {
+        ...tableParams.pagination,
+        total: data.length,
+        // 200 is mock data, you should read it from server
+        // total: data.totalCount,
+      },
+    });
   };
 
   useEffect(() => {
@@ -108,7 +105,7 @@ const Products = (): JSX.Element => {
   const handleTableChange: any = (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue>,
-    sorter: SorterResult<DataType>
+    sorter: SorterResult<IProduct>
   ) => {
     setTableParams({
       pagination,

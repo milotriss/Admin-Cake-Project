@@ -18,7 +18,7 @@ const xLabels = [
 export default function StackedAreaChart() {
   return (
     <LineChart
-      width={700}
+      width={1300}
       height={650}
       series={[
         { data: uData, label: 'uv', area: true, stack: 'total', showMark: false },

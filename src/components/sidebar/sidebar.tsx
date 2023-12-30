@@ -3,28 +3,54 @@ import { LuLayoutDashboard } from "react-icons/lu";
 import { TbUsers } from "react-icons/tb";
 import { SlSocialDropbox } from "react-icons/sl";
 import { LuClipboardEdit } from "react-icons/lu";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { useEffect, useState } from "react";
+import { notifySuccess } from "../../common/toastify";
+import { IUser } from "../../types/interface";
+import { useSelector } from "react-redux";
+import UserService from "../../services/users.service";
+
 
 const Sidebar = (): JSX.Element => {
-  let location: any = useLocation();
-
+  const idAdmin = localStorage.getItem('idAdmin');
+  const userService = new UserService()
+  const [admin, setAdmin] = useState<IUser>()
+  const navigate = useNavigate()
+  const location: any = useLocation();
+  const status = useSelector((state:any) => state.update)
+  useEffect(()=> {
+    const getAdmin = async () => {
+      const data:IUser = await userService.getAdminById(Number(idAdmin))
+      setAdmin(data)
+    }
+    getAdmin()
+  },[status])
+  const handleLogout = async () => {
+    localStorage.removeItem('idAdmin')
+    localStorage.removeItem('token')
+    navigate('/' , {state: true})
+  }
   return (
     <aside className="sidebarAdmin">
       <div className="informationAdmin">
         <img
-          src="../../../asset/img/41DD5264-F270-4222-9A09-68079B3D5719_1_105_c.jpeg"
+          src={admin?.avatar}
           alt=""
         />
         <div className="nameAdmin">
-          <p>Hi, Nhat Tien!</p>
-          <button className="btnLogout">Logout</button>
+          <p>{admin?.role === 3 ? "Hi, Admin" : `Hi, ${admin?.fullName}`}</p>
+          <button
+          onClick={handleLogout}
+          className="btnLogout">Logout</button>
         </div>
       </div>
       <ul className="menuAdmin">
         <Link
-          to={"/"}
+          to={"/dashboard"}
           className={
-            location.pathname === "/" ? "menuAdminItem activeAdmin" : "menuAdminItem"
+            location.pathname === "/dashboard" ? "menuAdminItem activeAdmin" : "menuAdminItem"
           }
         >
           <LuLayoutDashboard className="iconMenuAdmin" />
@@ -64,6 +90,7 @@ const Sidebar = (): JSX.Element => {
           <span className="menuAdminTitle">Orders</span>
         </Link>
       </ul>
+      <ToastContainer/>
     </aside>
   );
 };

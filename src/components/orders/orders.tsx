@@ -4,12 +4,11 @@ import qs from "qs";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
 import type { FilterValue, SorterResult } from "antd/es/table/interface";
 import "./orders.css";
+import OrderService from "../../services/orders.service";
+import { IOrder } from "../../types/interface";
+import { formatPrice } from "../../common/formatPrice";
 
-interface DataType {
-  name: string;
-  gender: string;
-  email: string;
-}
+
 
 interface TableParams {
   pagination?: TablePaginationConfig;
@@ -18,57 +17,60 @@ interface TableParams {
   filters?: Record<string, FilterValue>;
 }
 
-const columns: ColumnsType<DataType> = [
-  {
-    title: "Name User",
-    dataIndex: "usersName",
-    width: "20%",
-    sorter: true,
-  },
-  {
-    title: "Date",
-    dataIndex: "date",
-    sorter: true,
-    width: "20%",
-  },
-  {
-    title: "Price",
-    dataIndex: "price",
-    width: "15%",
-    sorter: true,
-  },
-  {
-    title: "Status",
-    dataIndex: "status",
-    width: "10%",
-    render: () => (
-      <select className="selectStatus">
-        <option value="">Confirmed</option>
-        <option value="">Shipping...</option>
-        <option value="">Finished</option>
-      </select>
-    ),
-  },
-  {
-    title: "Action",
-    dataIndex: "id",
-    render: (id) => (
-      <div>
-        <button className="btnActionUsers">View</button>
-      </div>
-    ),
-    width: "10%",
-  },
-];
-
-const getRandomuserParams = (params: TableParams) => ({
-  results: params.pagination?.pageSize,
-  page: params.pagination?.current,
-  ...params,
-});
 
 const Orders = (): JSX.Element => {
-  const [data, setData] = useState<DataType[]>();
+  const [onOrderDetails, setOnOrderDetails] = useState<boolean>(false)
+  const columns: ColumnsType<IOrder> = [
+    {
+      title: "Name User",
+      dataIndex: "userName",
+      width: "20%",
+    },
+    {
+      title: "Date",
+      dataIndex: "date",
+      width: "20%",
+    },
+    {
+      title: "Price",
+      dataIndex: "totalPrice",
+      render: (dataIndex) => (<span>{formatPrice(dataIndex)}</span>),
+      width: "15%",
+      sorter: (a:any, b:any) =>(Number(a.totalPrice) - Number(b.totalPrice))
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      width: "10%",
+      render: () => (
+        <select className="selectStatus">
+          <option value="">Pending...</option>
+          <option value="">Shipping...</option>
+          <option value="">Finished</option>
+        </select>
+      ),
+    },
+    {
+      title: "Action",
+      dataIndex: "id",
+      render: (id) => (
+        <div>
+          <button onClick={() => setOnOrderDetails(true)} className="btnActionUsers">View</button>
+        </div>
+      ),
+      width: "10%",
+    },
+  ];
+  const offOrderDetails = () => {
+    setOnOrderDetails(false);
+  }
+  const getRandomuserParams = (params: TableParams) => ({
+    results: params.pagination?.pageSize,
+    page: params.pagination?.current,
+    ...params,
+  });
+  const orderService = new OrderService()
+  const [data, setData] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
@@ -77,27 +79,22 @@ const Orders = (): JSX.Element => {
     },
   });
 
-  const fetchData = () => {
+  const fetchData = async () => {
     setLoading(true);
-    fetch(
-      `https://randomuser.me/api?${qs.stringify(
-        getRandomuserParams(tableParams)
-      )}`
-    )
-      .then((res) => res.json())
-      .then(({ results }) => {
-        setData(results);
+    const data:any = await orderService.getAllOrders()
+   
+        setData(data.reverse());
         setLoading(false);
         setTableParams({
           ...tableParams,
           pagination: {
             ...tableParams.pagination,
-            total: 200,
+            total: data.length,
             // 200 is mock data, you should read it from server
             // total: data.totalCount,
           },
         });
-      });
+
   };
 
   useEffect(() => {
@@ -107,7 +104,7 @@ const Orders = (): JSX.Element => {
   const handleTableChange: any = (
     pagination: TablePaginationConfig,
     filters: Record<string, FilterValue>,
-    sorter: SorterResult<DataType>
+    sorter: SorterResult<IOrder>
   ) => {
     setTableParams({
       pagination,

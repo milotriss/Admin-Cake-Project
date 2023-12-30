@@ -21,7 +21,6 @@
 .sidebarAdmin .informationAdmin .nameAdmin {
     color: #fff;
     text-align: center;
-    height: calc(100% - 100px);
     width: 100%;
 }
 .sidebarAdmin .informationAdmin .nameAdmin .btnLogout {
