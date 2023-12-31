@@ -4,7 +4,6 @@ import updateReducer from './reducers/update'
 
 
 const rootReducer = combineReducers({
-    
     update: updateReducer.reducer
 })
 

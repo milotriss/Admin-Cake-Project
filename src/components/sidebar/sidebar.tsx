@@ -19,14 +19,14 @@ const Sidebar = (): JSX.Element => {
   const [admin, setAdmin] = useState<IUser>()
   const navigate = useNavigate()
   const location: any = useLocation();
-  const status = useSelector((state:any) => state.update)
+  // const status = useSelector((state:any) => state.update)
   useEffect(()=> {
     const getAdmin = async () => {
       const data:IUser = await userService.getAdminById(Number(idAdmin))
       setAdmin(data)
     }
     getAdmin()
-  },[status])
+  },[])
   const handleLogout = async () => {
     localStorage.removeItem('idAdmin')
     localStorage.removeItem('token')

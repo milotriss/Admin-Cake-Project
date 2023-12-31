@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { Table } from "antd";
 import qs from "qs";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
@@ -7,8 +7,7 @@ import "./orders.css";
 import OrderService from "../../services/orders.service";
 import { IOrder } from "../../types/interface";
 import { formatPrice } from "../../common/formatPrice";
-
-
+import OrderDetail from "../orderDetail/orderDetail";
 
 interface TableParams {
   pagination?: TablePaginationConfig;
@@ -17,9 +16,9 @@ interface TableParams {
   filters?: Record<string, FilterValue>;
 }
 
-
 const Orders = (): JSX.Element => {
-  const [onOrderDetails, setOnOrderDetails] = useState<boolean>(false)
+  const [onOrderDetails, setOnOrderDetails] = useState<boolean>(false);
+  const [orderById, setOrderById] = useState<IOrder>();
   const columns: ColumnsType<IOrder> = [
     {
       title: "Name User",
@@ -34,19 +33,22 @@ const Orders = (): JSX.Element => {
     {
       title: "Price",
       dataIndex: "totalPrice",
-      render: (dataIndex) => (<span>{formatPrice(dataIndex)}</span>),
+      render: (dataIndex) => <span>{formatPrice(dataIndex)}</span>,
       width: "15%",
-      sorter: (a:any, b:any) =>(Number(a.totalPrice) - Number(b.totalPrice))
+      sorter: (a: any, b: any) => Number(a.totalPrice) - Number(b.totalPrice),
     },
     {
       title: "Status",
       dataIndex: "status",
       width: "10%",
-      render: () => (
-        <select className="selectStatus">
-          <option value="">Pending...</option>
-          <option value="">Shipping...</option>
-          <option value="">Finished</option>
+      render: (dataIndex, record: IOrder) => (
+        <select
+          onChange={(e) => onChangeStatus(e, Number(record.id))}
+          className="selectStatus"
+        >
+          <option value="1">Pending...</option>
+          <option value="2">Shipping...</option>
+          <option value="3">Finished</option>
         </select>
       ),
     },
@@ -55,23 +57,42 @@ const Orders = (): JSX.Element => {
       dataIndex: "id",
       render: (id) => (
         <div>
-          <button onClick={() => setOnOrderDetails(true)} className="btnActionUsers">View</button>
+          <button
+            onClick={() => {
+              setOnOrderDetails(true);
+              handleGetOrderById(id);
+            }}
+            className="btnActionUsers"
+          >
+            View
+          </button>
         </div>
       ),
       width: "10%",
     },
   ];
+  const onChangeStatus = async (
+    e: ChangeEvent<HTMLSelectElement>,
+    id: number
+  ) => {
+    await orderService.changeStatusOrder(id, Number(e.target.value));
+  };
+  const handleGetOrderById = async (id: number) => {
+    const data = await orderService.getOrderById(id);
+    setOrderById(data);
+  };
   const offOrderDetails = () => {
     setOnOrderDetails(false);
-  }
+  };
   const getRandomuserParams = (params: TableParams) => ({
     results: params.pagination?.pageSize,
     page: params.pagination?.current,
     ...params,
   });
-  const orderService = new OrderService()
+  const orderService = new OrderService();
   const [data, setData] = useState<IOrder[]>([]);
   const [loading, setLoading] = useState(false);
+  const [valueSearchOrder, setValueSearchOrder] = useState<string>("");
   const [tableParams, setTableParams] = useState<TableParams>({
     pagination: {
       current: 1,
@@ -81,20 +102,19 @@ const Orders = (): JSX.Element => {
 
   const fetchData = async () => {
     setLoading(true);
-    const data:any = await orderService.getAllOrders()
-   
-        setData(data.reverse());
-        setLoading(false);
-        setTableParams({
-          ...tableParams,
-          pagination: {
-            ...tableParams.pagination,
-            total: data.length,
-            // 200 is mock data, you should read it from server
-            // total: data.totalCount,
-          },
-        });
+    const data: any = await orderService.getAllOrders();
 
+    setData(data.reverse());
+    setLoading(false);
+    setTableParams({
+      ...tableParams,
+      pagination: {
+        ...tableParams.pagination,
+        total: data.length,
+        // 200 is mock data, you should read it from server
+        // total: data.totalCount,
+      },
+    });
   };
 
   useEffect(() => {
@@ -117,11 +137,33 @@ const Orders = (): JSX.Element => {
       setData([]);
     }
   };
-
+  const handleSearchOrder = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.value !== '') {
+      setValueSearchOrder(e.target.value);
+    }else {
+      setValueSearchOrder('');
+    }
+  };
+  useEffect(() => {
+    const getData = async () =>{
+      const data = await orderService.searchOrderByDate(valueSearchOrder)
+      setData(data);
+    } 
+    setTimeout(() => {
+      getData();
+    }, 1000);
+  },[valueSearchOrder])
+  
   return (
     <section className="orders">
       <div className="searchOrders">
-        <input autoFocus placeholder="Search by date..." type="text" />
+        <input
+          autoFocus
+          onChange={handleSearchOrder}
+          value={valueSearchOrder}
+          placeholder="Search by date..."
+          type="text"
+        />
       </div>
       <Table
         columns={columns}
@@ -130,6 +172,9 @@ const Orders = (): JSX.Element => {
         loading={loading}
         onChange={handleTableChange}
       />
+      {onOrderDetails ? (
+        <OrderDetail orderById={orderById} offOrderDetails={offOrderDetails} />
+      ) : null}
     </section>
   );
 };

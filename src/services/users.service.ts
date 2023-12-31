@@ -15,7 +15,7 @@ class UserService {
   }
   public async getAllUsers(): Promise<IUser[]> {
     const result = await this.userRepository.getAllUsers();
-    const users = result.data.filter((user: IUser) => user.role === 2);
+    const users = result.data.filter((user: IUser) => (user.role === 2));
     return users;
   }
   public async getUserById(id: number): Promise<IUser> {

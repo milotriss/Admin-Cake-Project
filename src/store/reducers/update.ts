@@ -10,7 +10,7 @@ const updateReducer = createSlice({
     reducers:{
         update: (state:boolean) => {
             return state = !state
-        }
+        },
     }
 })
 export const {update} = updateReducer.actions

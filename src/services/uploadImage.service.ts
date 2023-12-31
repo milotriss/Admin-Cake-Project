@@ -1,4 +1,4 @@
-import { ref, uploadBytes, getDownloadURL, listAll } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import storage from "../config/firebase.config";
 class UploadService {
   public async uploadImage(file: any, folderName: string) {

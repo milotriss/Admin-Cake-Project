@@ -1,7 +1,4 @@
 import ApiService from "../api/api.service"
-
-
-
 class OrderRepository {
     private apiService: ApiService
     constructor(){
@@ -11,5 +8,9 @@ class OrderRepository {
         const result = await this.apiService.GetAll("orders")
         return result
     }
+    async patchStatusOrder(id:number, data:number) {
+       await this.apiService.Patch('orders', id, "status", data)
+    }
+    
 }
 export default OrderRepository

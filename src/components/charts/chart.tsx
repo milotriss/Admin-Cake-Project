@@ -34,7 +34,7 @@ export default function StackedAreaChart() {
       xAxis={[{ scaleType: 'point', data: xLabels }]}
       sx={{
         '.MuiLineElement-root': {
-          display: 'none',
+          display: 'block',
         },
       }}
     />

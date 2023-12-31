@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ChangeEvent } from "react";
 import "./users.css";
-import { QuestionCircleOutlined } from "@ant-design/icons";
+
 import { Popconfirm, Tabs } from "antd";
 import { Table } from "antd";
 import type { ColumnsType, TablePaginationConfig } from "antd/es/table";
@@ -46,15 +46,47 @@ const Users = (): JSX.Element => {
       title: "Name",
       dataIndex: "fullName",
       width: "25%",
+      render: (dataIndex, record: any) => (
+        <span
+          style={
+            record.status === false
+              ? { textDecoration: "line-through" }
+              : { textDecoration: "none" }
+          }
+        >
+          {dataIndex}
+        </span>
+      ),
     },
-
     {
       title: "Email",
       dataIndex: "email",
+      render: (dataIndex, record: any) => (
+        <span
+          style={
+            record.status === false
+              ? { textDecoration: "line-through" }
+              : { textDecoration: "none" }
+          }
+        >
+          {dataIndex}
+        </span>
+      ),
     },
     {
       title: "Phone",
       dataIndex: "phone",
+      render: (dataIndex, record: any) => (
+        <span
+          style={
+            record.status === false
+              ? { textDecoration: "line-through" }
+              : { textDecoration: "none" }
+          }
+        >
+          {dataIndex}
+        </span>
+      ),
     },
     {
       title: "Status",
@@ -72,19 +104,25 @@ const Users = (): JSX.Element => {
         return (
           <div>
             {record.status === true ? (
-              <button
-                onClick={() => onBlock(dataIndex)}
-                className="btnActionUsers"
+              <Popconfirm
+                title="Block this user"
+                description="Are you sure to BLOCK this user?"
+                onConfirm={() => onBlock(dataIndex)}
+                okText="Yes"
+                cancelText="No"
               >
-                Block
-              </button>
+                <button className="btnActionUsers">Block</button>
+              </Popconfirm>
             ) : (
-              <button
-                onClick={() => onActive(dataIndex)}
-                className="btnActionUsers"
+              <Popconfirm
+                title="Unblock this user"
+                description="Are you sure to UNBLOCK this user?"
+                onConfirm={() => onActive(dataIndex)}
+                okText="Yes"
+                cancelText="No"
               >
-                Unblock
-              </button>
+                <button className="btnActionUsers">Unblock</button>
+              </Popconfirm>
             )}
           </div>
         );
@@ -171,11 +209,13 @@ const Users = (): JSX.Element => {
   };
   useEffect(() => {
     const getData = async () => {
-      const data = await userService.searchUsers(searchValue)
+      const data = await userService.searchUsers(searchValue);
       setData(data);
-    }
-    getData()
-  },[searchValue]);
+    };
+    setTimeout(() => {
+      getData();
+    }, 1000);
+  }, [searchValue]);
 
   return (
     <section className="usersAdmins">
