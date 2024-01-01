@@ -59,7 +59,7 @@ const Login = (): JSX.Element => {
     <div className="admin__login">
       <div className="admin__login-overlay">
         <form>
-          <h1>Admin Login</h1>
+          <h1>1990 Bakery</h1>
           <input onChange={handleChangeLogin} value={loginData.email} name="email" id="email-admin" placeholder="Email" type="text" />
           <input onChange={handleChangeLogin} value={loginData.password} name="password" id="password-admin" placeholder="Password" type="password" />
           <button onClick={handleLogin}>Login</button>

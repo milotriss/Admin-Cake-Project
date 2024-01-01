@@ -146,7 +146,6 @@ const Users = (): JSX.Element => {
   const fetchData = async () => {
     setLoading(true);
     const data: any = await userService.getAllUsers();
-
     setData(data);
     setLoading(false);
     setTableParams({

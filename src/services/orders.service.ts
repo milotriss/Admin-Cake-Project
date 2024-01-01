@@ -1,3 +1,4 @@
+import { formatDate } from "../common/formatDate";
 import OrderRepository from "../repositories/order.repositories";
 import { IOrder } from "../types/interface";
 
@@ -6,10 +7,10 @@ class OrderService {
   constructor() {
     this.orderRepository = new OrderRepository();
   }
-
   public async getAllOrders(): Promise<IOrder[]> {
     const result = await this.orderRepository.getAllOrder();
-    return result.data
+    const data = result.data.sort((a:any, b:any) =>(a.status - b.status))
+    return data
   }
   public async getOrderById (id: number): Promise<IOrder> {
     const data = await this.getAllOrders()
@@ -26,7 +27,7 @@ class OrderService {
   }
   public async searchOrderByDate(date:string): Promise<IOrder[]> {
     const data = await this.getAllOrders()
-    const result:IOrder[] = data.filter((item: IOrder) => item.date.split("-").includes(String(date.split("-"))))
+    const result:IOrder[] = data.filter((item: IOrder) => formatDate(item.date).includes(formatDate(date)))
     return  result
   }
   

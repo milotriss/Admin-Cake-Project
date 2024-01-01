@@ -8,6 +8,8 @@ import OrderService from "../../services/orders.service";
 import { IOrder } from "../../types/interface";
 import { formatPrice } from "../../common/formatPrice";
 import OrderDetail from "../orderDetail/orderDetail";
+import { useDispatch, useSelector } from "react-redux";
+import { update } from "../../store/reducers/update";
 
 interface TableParams {
   pagination?: TablePaginationConfig;
@@ -19,6 +21,8 @@ interface TableParams {
 const Orders = (): JSX.Element => {
   const [onOrderDetails, setOnOrderDetails] = useState<boolean>(false);
   const [orderById, setOrderById] = useState<IOrder>();
+  const dispatch = useDispatch();
+  const status = useSelector((state: any) => state.update);
   const columns: ColumnsType<IOrder> = [
     {
       title: "Name User",
@@ -41,16 +45,19 @@ const Orders = (): JSX.Element => {
       title: "Status",
       dataIndex: "status",
       width: "10%",
-      render: (dataIndex, record: IOrder) => (
-        <select
-          onChange={(e) => onChangeStatus(e, Number(record.id))}
-          className="selectStatus"
-        >
-          <option value="1">Pending...</option>
-          <option value="2">Shipping...</option>
-          <option value="3">Finished</option>
-        </select>
-      ),
+      render: (dataIndex, record: IOrder) => {
+        return (
+          <select
+            value={record.status}
+            onChange={(e) => onChangeStatus(e, Number(record.id))}
+            className="selectStatus"
+          >
+            <option disabled={(dataIndex === 2 || dataIndex === 3) ? true : false} value="1">Pending...</option>
+            <option disabled={dataIndex === 3 ? true : false} value="2">Shipping...</option>
+            <option value="3">Finished</option>
+          </select>
+        );
+      },
     },
     {
       title: "Action",
@@ -73,9 +80,14 @@ const Orders = (): JSX.Element => {
   ];
   const onChangeStatus = async (
     e: ChangeEvent<HTMLSelectElement>,
-    id: number
+    id:number
   ) => {
-    await orderService.changeStatusOrder(id, Number(e.target.value));
+    await orderService.changeStatusOrder(
+      id,
+      Number(e.target.value)
+    );
+    
+    dispatch(update());
   };
   const handleGetOrderById = async (id: number) => {
     const data = await orderService.getOrderById(id);
@@ -104,7 +116,7 @@ const Orders = (): JSX.Element => {
     setLoading(true);
     const data: any = await orderService.getAllOrders();
 
-    setData(data.reverse());
+    setData(data);
     setLoading(false);
     setTableParams({
       ...tableParams,
@@ -119,7 +131,7 @@ const Orders = (): JSX.Element => {
 
   useEffect(() => {
     fetchData();
-  }, [JSON.stringify(tableParams)]);
+  }, [JSON.stringify(tableParams), status]);
 
   const handleTableChange: any = (
     pagination: TablePaginationConfig,
@@ -138,22 +150,20 @@ const Orders = (): JSX.Element => {
     }
   };
   const handleSearchOrder = (e: ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value !== '') {
+    if (e.target.value.length >= 0) {
       setValueSearchOrder(e.target.value);
-    }else {
-      setValueSearchOrder('');
     }
   };
   useEffect(() => {
-    const getData = async () =>{
-      const data = await orderService.searchOrderByDate(valueSearchOrder)
+    const getData = async () => {
+      const data = await orderService.searchOrderByDate(valueSearchOrder);
       setData(data);
-    } 
+    };
     setTimeout(() => {
       getData();
     }, 1000);
-  },[valueSearchOrder])
-  
+  }, [valueSearchOrder]);
+
   return (
     <section className="orders">
       <div className="searchOrders">
