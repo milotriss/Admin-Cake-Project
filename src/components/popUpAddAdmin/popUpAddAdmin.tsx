@@ -9,6 +9,7 @@ import { notifyError, notifySuccess } from "../../common/toastify";
 import { ToastContainer } from "react-toastify";
 import UserService from "../../services/users.service";
 import { update } from "../../store/reducers/update";
+import { Popconfirm } from "antd";
 
 
 interface Props {
@@ -50,7 +51,7 @@ const PopUpAddAdmin = (props:Props): JSX.Element => {
       e.target.style.border = "1px solid #fff" 
     }
   };
-  const handleAddAdmin = async (e: MouseEvent<HTMLButtonElement>) => {
+  const handleAddAdmin = async (e:any) => {
     if (user.email === "" || user.fullName === "" || user.password === "") {
       notifyError('Please enter all fields')
     }else {
@@ -105,7 +106,15 @@ const PopUpAddAdmin = (props:Props): JSX.Element => {
             />
           </div>
         </div>
+        <Popconfirm
+            title="Update Products"
+            description="Are you sure about this information?"
+            onConfirm={handleAddAdmin}
+            okText="Yes"
+            cancelText="No"
+          >
         <button onClick={handleAddAdmin}>ADD+</button>
+          </Popconfirm>
         <button onClick={() => props.offPopUpAdd()}>ESC</button>
       </div>
       <ToastContainer/>
